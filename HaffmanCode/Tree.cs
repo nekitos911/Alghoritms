@@ -7,7 +7,6 @@ using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
 using System.Threading.Tasks;
-using ProtoBuf;
 
 namespace HaffmanCode
 {
@@ -17,15 +16,17 @@ namespace HaffmanCode
         private List<Node> nodes;
         private List<bool> encodedTree;
         private Node _root;
-        [ProtoMember(1)]
         private Dictionary<char, int> _frequencies;
         private readonly string input;
-        private readonly string seriaziableTreeName;
 
-        public Tree(string input, string seriaziableTreeName) : this(seriaziableTreeName)
+        /// <summary>
+        /// Constructor for encode new string
+        /// </summary>
+        /// <param name="input"></param>
+        public Tree(string input) : this()
         {
             this.input = input;
-            _frequencies = new Dictionary<char, int>();
+            _frequencies = new Dictionary<char, int>(256);
             foreach (var s in input)
             {
                 if (!_frequencies.ContainsKey(s))
@@ -36,10 +37,11 @@ namespace HaffmanCode
                 _frequencies[s]++;
             }
         }
-
-        public Tree(string seriaziableTreeName)
+        /// <summary>
+        /// Constructor for decode
+        /// </summary>
+        public Tree()
         {
-            this.seriaziableTreeName = seriaziableTreeName;
             nodes = new List<Node>();
             encodedTree = new List<bool>();
         }
@@ -97,12 +99,12 @@ namespace HaffmanCode
         {
             Build();
 
-            var encodedSource = new List<bool>();
+            var encodedSource = new List<bool>(1024);
             EncodeNode(_root);
             
             foreach (var i in input)
             {
-                var encodedSymbol = _root.Traverse(i, new List<bool>());
+                var encodedSymbol = _root.Traverse(i, new List<bool>(100));
                 encodedSource.AddRange(encodedSymbol);
             }
             var bits = new BitArray(encodedSource.ToArray());
@@ -117,7 +119,10 @@ namespace HaffmanCode
         {
             return (node.Left == null && node.Right == null);
         }
-
+        /// <summary>
+        /// Encode Dictionary
+        /// </summary>
+        /// <param name="node"></param>
         private void EncodeNode(Node node)
         {
             if (node.Left == null)
@@ -140,15 +145,20 @@ namespace HaffmanCode
                 EncodeNode(node.Right);
             }
         }
+        /// <summary>
+        /// Decode Dictionary
+        /// </summary>
+        /// <param name="num">counter for bits</param>
+        /// <returns></returns>
         Node ReadNode(ref int num)
         {
             if (encodedTree[num])
             {
                 num++;
                 var bits = new BitArray(8);
-                for (int i = 0; i < 8; i++,num++)
+                for (int i = 0; i < 8; i++, num++)
                 {
-                    bits.Set(i,encodedTree[num]);
+                    bits.Set(i, encodedTree[num]);
                 }
 
                 var s = "";
@@ -157,11 +167,8 @@ namespace HaffmanCode
                     s += bits.Get(i) ? 1 : 0;
                 }
 
-
-
                 var b = new byte[1];
                 b[0] = Convert.ToByte(s, 2);
-
 
                 var n = new Node {Symbol = Encoding.GetEncoding(1251).GetChars(b)[0]};
                 return n;
@@ -171,21 +178,26 @@ namespace HaffmanCode
                 num++;
                 var leftChild = ReadNode(ref num);
                 var rightChild = ReadNode(ref num);
-                var n = new Node() {Symbol = null,Left = leftChild,Right = rightChild};
+                var n = new Node() {Symbol = null, Left = leftChild, Right = rightChild};
                 return n;
             }
         }
-         
+       
         public BitArray getEncodedTree()
         {
             return new BitArray(encodedTree.ToArray());
         }
-
-        public string Decode(BitArray treeBits,BitArray bits)
+        /// <summary>
+        /// Decode input bits
+        /// </summary>
+        /// <param name="dictBits">Dictionary</param>
+        /// <param name="bits">bits for decode</param>
+        /// <returns>decoded string</returns>
+        public string Decode(BitArray dictBits,BitArray bits)
         {
-            for (int i = 0; i < treeBits.Count; i++)
+            for (int i = 0; i < dictBits.Count; i++)
             {
-               encodedTree.Add(treeBits.Get(i));
+               encodedTree.Add(dictBits.Get(i));
             }
 
             var num = 0;
