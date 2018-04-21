@@ -3,19 +3,16 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using ProtoBuf;
+
 
 namespace HaffmanCode
 {
-    [ProtoContract]
     class Node
     {
-        [ProtoMember(1)]
+       
         public char? Symbol { get; set; }     
         public int Frequency { get; set; }
-        [ProtoMember(2)]
         public Node Right { get; set; }
-        [ProtoMember(3)]
         public Node Left { get; set; }
 
         public List<bool> Traverse(char symbol, List<bool> data)

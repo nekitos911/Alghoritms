@@ -26,10 +26,11 @@ namespace HaffmanCode
                     file.Close();
                     reader.Close();
                     encode(inputString,new FileInfo(fileName).Name);
-
+                    Console.WriteLine("Done, file saved as " + new FileInfo(fileName).Name + ".enc");
                     break;
                 case "-d":
                     decode(new FileInfo(fileName).Name);
+                    Console.WriteLine("Done");
                     break;
                 default:
                     Error("Using:\n -e fileName for enc / -d Enc fileName for dec");
