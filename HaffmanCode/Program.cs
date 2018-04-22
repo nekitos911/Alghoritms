@@ -25,11 +25,11 @@ namespace HaffmanCode
                     var inputString = reader.ReadToEnd();
                     file.Close();
                     reader.Close();
-                    encode(inputString,new FileInfo(fileName).Name);
+                    Encode(inputString,new FileInfo(fileName).Name);
                     Console.WriteLine("Done, file saved as " + new FileInfo(fileName).Name + ".enc");
                     break;
                 case "-d":
-                    decode(new FileInfo(fileName).Name);
+                    Decode(new FileInfo(fileName).Name);
                     Console.WriteLine("Done");
                     break;
                 default:
@@ -39,7 +39,7 @@ namespace HaffmanCode
             Console.ReadKey();
         }
 
-        static void encode(string input,string fileName)
+        static void Encode(string input,string fileName)
         {
             var haffman = new Tree(input);
             var bits = haffman.Encode();
@@ -50,31 +50,51 @@ namespace HaffmanCode
             writer.WriteBits(bits,FileMode.Append);
         }
 
-        static void decode(string fileName)
+        static void Decode(string fileName)
         {
             var haffman = new Tree(fileName);
             using (var file = new FileStream(fileName, FileMode.Open))
             {
-                using (var reader = new StreamReader(file))
-                {
                     using (var binReader = new BinaryReader(file))
                     {
                         var treeBytes = new List<byte>();
                         var tmp = new byte[3];
-                        //Check for stop bytes "\n\0\n"
-                        while ((tmp[0] = binReader.ReadByte()) != (byte)'\n' & (tmp[1] = binReader.ReadByte()) != (byte)'\0' & (tmp[2] = binReader.ReadByte()) != (byte)'\n')
+						//Check for stop bytes "\n\0\n"
+                        while (true)
                         {
-                            treeBytes.AddRange(tmp);
+                            tmp[0] = binReader.ReadByte();
+                            if ((tmp[0]) == (byte) '\n')
+                            {
+                                tmp[1] = binReader.ReadByte();
+                                if ((tmp[1]) == (byte) '\0')
+                                {
+                                    tmp[2] = binReader.ReadByte();
+                                    if ((tmp[2]) == (byte) '\n')
+                                    {
+                                        break;
+                                    }
+                                        treeBytes.AddRange(tmp);
+                                }
+                                else
+                                {
+                                    treeBytes.Add(tmp[0]);
+                                    treeBytes.Add(tmp[1]);
+                                }
+                                
+                            }
+                            else
+                            {
+                                treeBytes.Add(tmp[0]);
+                            }
                         }
                         var count = treeBytes.Count;
-                        reader.BaseStream.Seek(0, SeekOrigin.Begin);
+                        file.Seek(0, SeekOrigin.Begin);
                         var treeBits = new BinStream().ReadBits(treeBytes.ToArray());
-                        reader.BaseStream.Seek(count + 4, SeekOrigin.Begin);
+                        file.Seek(count + 4, SeekOrigin.Begin);
                         var fileBits = new BinStream().ReadBits(binReader.ReadBytes((int)file.Length - count - 4));
                         File.WriteAllText("DEC" + fileName.Remove(fileName.LastIndexOf(".")), haffman.Decode(treeBits, fileBits),
                             Encoding.GetEncoding(1251));
                     }
-                }
             }
         }
 
