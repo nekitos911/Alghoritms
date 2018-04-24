@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace HaffmanCode
@@ -99,33 +101,30 @@ namespace HaffmanCode
         {
             Build();
 
-            var encodedSource = new List<bool>(1024);
+            var encodedSource = new List<bool>(256 * 8);
             EncodeNode(_root);
+
+            var count = input.Length;
+            var index = 1.0D;
             
             foreach (var i in input)
             {
-                var encodedSymbol = _root.Traverse(i, new List<bool>(100));
+                var encodedSymbol = _root.Traverse(i, new List<bool>());
                 encodedSource.AddRange(encodedSymbol);
+                Util.ShowPercents(count, ref index);
             }
             var bits = new BitArray(encodedSource.ToArray());
             return bits;
+            
         }
-        /// <summary>
-        /// Check node's children
-        /// </summary>
-        /// <param name="node"></param>
-        /// <returns></returns>
-        private bool IsLeaf(Node node)
-        {
-            return (node.Left == null && node.Right == null);
-        }
+       
         /// <summary>
         /// Encode Dictionary
         /// </summary>
         /// <param name="node"></param>
         private void EncodeNode(Node node)
         {
-            if (node.Left == null)
+            if (node.IsLeaf)
             {
                 encodedTree.Add(true);
                 var bStr = string.Concat(Encoding.GetEncoding(1251).GetBytes(node.Symbol.ToString()).Select(b => Convert.ToString(b, 2)));
@@ -204,7 +203,10 @@ namespace HaffmanCode
             _root = ReadNode(ref num);
 
             var current = _root;
-            var decoded = "";
+            var decoded = new StringBuilder();
+
+            var count = bits.Length;
+            var index = 1.0D;
 
             foreach (bool bit in bits)
             {
@@ -222,13 +224,15 @@ namespace HaffmanCode
                         current = current.Left;
                     }
                 }
-              
-                if (!IsLeaf(current)) continue;
-                decoded += current.Symbol;
+                Util.ShowPercents(count,ref index);
+                if (!current.IsLeaf) continue;
+                decoded.Append(current.Symbol);
                 current = _root;
             }
 
-            return decoded;
+            return decoded.ToString();
         }
+
+       
     }
 }

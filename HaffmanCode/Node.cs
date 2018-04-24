@@ -14,6 +14,7 @@ namespace HaffmanCode
         public int Frequency { get; set; }
         public Node Right { get; set; }
         public Node Left { get; set; }
+        public bool IsLeaf => Left == null && Right == null;
 
         public List<bool> Traverse(char symbol, List<bool> data)
         {
@@ -26,17 +27,14 @@ namespace HaffmanCode
             List<bool> right = null;
             if (Left != null)
             {
-                var leftPath = new List<bool>();
-                leftPath.AddRange(data);
-                leftPath.Add(false);
-
+                var leftPath = new List<bool>(data) {false};
+            
                 left = Left.Traverse(symbol, leftPath);
             }
             if (Right != null)
             {
-                var rightPath = new List<bool>();
-                rightPath.AddRange(data);
-                rightPath.Add(true);
+                var rightPath = new List<bool>(data) {true};
+
                 right = Right.Traverse(symbol, rightPath);
             }
             return left ?? right;

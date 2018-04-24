@@ -41,7 +41,9 @@ namespace Adaptive_Haffman_Coder
         /// <returns>BitArray with encoded bits</returns>
         public BitArray Encode(string input)
         {
-            var encodedBits = new List<bool>();
+            var encodedBits = new List<bool>(256 * 8);
+            var count = input.Length;
+            var index = 1.0D;
             // Encode all characters in input string
             foreach (var character in input)
             {
@@ -52,6 +54,7 @@ namespace Adaptive_Haffman_Coder
 
                 //Rebuid tree with new character
                 RebuildTree(charNode, character);
+                Util.ShowPercents(count,ref index);
             }
             // Clear Haffman's tree
             ClearTree();
@@ -64,11 +67,14 @@ namespace Adaptive_Haffman_Coder
         /// <returns>Decoded string</returns>
         public string Decode(BitArray bits)
         {
-            var charFound = new List<char>();
+            var charFound = new List<char>(256 * 8);
             // Begin from root
             var currentDecodePos = root;
             var legtOverBits = new List<bool>(8);
             var bitIndex = 0;
+
+            var count = bits.Length;
+            var index = 1.0D;
 
             while (true)
             {
@@ -92,13 +98,13 @@ namespace Adaptive_Haffman_Coder
                         if (legtOverBits.Count == charSize)
                         {
                             var charBits = new BitArray(legtOverBits.ToArray());
-                            var s = "";
+                            var s = new StringBuilder();
                             for (int i = 0; i < charBits.Count; i++)
                             {
-                                s += charBits.Get(i) ? 1 : 0;
+                                s.Append(charBits.Get(i) ? 1 : 0);
                             }
                             var b = new byte[1];
-                            b[0] = Convert.ToByte(s, 2);
+                            b[0] = Convert.ToByte(s.ToString(), 2);
 
                             var newChar = Encoding.GetEncoding(1251).GetChars(b)[0];
                             charFound.Add(newChar);
@@ -132,6 +138,7 @@ namespace Adaptive_Haffman_Coder
                 {
                     break;
                 }
+                Util.ShowPercents(count,ref index);
             }
 
             return new string(charFound.ToArray());
